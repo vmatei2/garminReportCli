@@ -1,0 +1,15 @@
+[project]
+name = "garmin-report-cli"
+version = "0.1.0"
+description = "CLI tool to fetch Garmin Connect data and email visual weekly performance analysis"
+authors = [{ name = "Vlad", email = "vlad.mateei@gmail.com" }]
+dependencies = [
+    "garminconnect",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "python-dotenv",
+    "pwinput"
+]
+requires-python = ">=3.9"
+
