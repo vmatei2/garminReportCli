@@ -205,7 +205,7 @@ class GarminActivity:
         raise ValueError("Please make sure the zone is between 1 and 5")
 
 
-def run(fetch: bool = True, sd: datetime = datetime(2025, 1, 1), ed: datetime = datetime(2025, 7, 7)):
+def run(fetch: bool = True, sd: datetime = datetime(2025, 6, 1), ed: datetime = datetime(2025, 7, 7)):
     """
     Main function to run the script
     :return:
@@ -218,17 +218,19 @@ def run(fetch: bool = True, sd: datetime = datetime(2025, 1, 1), ed: datetime = 
     vo2data = garminconnection.get_vo2max_and_training_status_series(start=sd, end=ed, fetch=fetch)
     vo2data = pd.DataFrame(vo2data)
     plot_training_load_with_metric(vo2data, metric="vo2Max", metric_label="Vo2 Max", metric_color="darkgreen",
-                                    output_path="assets/garmin_images/load_v02.png")
+                                   output_path="assets/garmin_images/load_v02.png")
     plot_training_load_with_metric(vo2data, metric="restingHR", metric_label="Resting HR", metric_color="crimson",
-                                    output_path="assets/garmin_images/load_rhr.png")
+                                   output_path="assets/garmin_images/load_rhr.png")
     weekly = get_weekly(vo2data, activitiesDf=garminActivitiesDf)
     weekly_corr(weekly)
     plot_zones_and_hr(weekly_df=weekly)
 
 
 def get_weekly(vo2df, activitiesDf):
+    # expand zones and compute week
     activitiesDf[_ct.ZONE_COLS] = activitiesDf["time_in_zones"].apply(pd.Series)
-    activitiesDf["week"] = activitiesDf["startDate"].dt.to_period("W").apply(lambda r:r.start_time)
+    activitiesDf["week"] = activitiesDf["startDate"].dt.to_period("W").apply(lambda r: r.start_time)
+    # base aggregation
     weekly = activitiesDf.groupby("week").agg({
         "average_hr": "mean",
         "duration": "sum",
@@ -236,14 +238,24 @@ def get_weekly(vo2df, activitiesDf):
         "max_speed": "max",
         **{col: "sum" for col in _ct.ZONE_COLS}
     })
+    # count activities per type
+    counts = (
+        activitiesDf
+        .groupby(["week", "activity_type"])
+        .size()
+        .unstack(fill_value=0)
+    )
+    # merge counts into weekly
+    weekly = weekly.join(counts, how="left")
+    # VO2 and resting HR
     vo2df["date"] = pd.to_datetime(vo2df["date"])
-    vo2df["week"] = vo2df["date"].dt.to_period("W").apply(lambda r:r.start_time)
-    vo2weekly = vo2df.groupby("week").agg({
-        "vo2Max": "mean",
-        "restingHR": "mean"
-    }).reset_index()
-    weekly = weekly.reset_index().merge(vo2weekly, on="week", how="inner")
-    weekly.set_index("week", inplace=True)
+    vo2df["week"] = vo2df["date"].dt.to_period("W").apply(lambda r: r.start_time)
+    vo2weekly = (
+        vo2df.groupby("week")
+        .agg({"vo2Max": "mean", "restingHR": "mean"})
+    )
+    # combine everything
+    weekly = weekly.merge(vo2weekly, left_index=True, right_index=True, how="inner")
     return weekly
 
 
@@ -301,7 +313,6 @@ def plot_zones_and_hr(weekly_df, output_path="assets/garmin_images/zones_vs_hr.p
     plt.show()
     plt.close(fig)
     return output_path
-
 
 
 def get_date_range(activities: List[GarminActivity]):
@@ -369,14 +380,13 @@ def plot_activity_breakdown(activities: List[GarminActivity],
 
 
 def plot_training_load_with_metric(
-    df: pd.DataFrame,
-    metric: str = "vo2Max",  # or "restingHR"
-    metric_label: str = "VO₂ Max",
-    metric_color: str = "darkgreen",
-    metric_style: dict = None,
-    output_path: str = "assets/garmin_images/load_metric.png"
+        df: pd.DataFrame,
+        metric: str = "vo2Max",  # or "restingHR"
+        metric_label: str = "VO₂ Max",
+        metric_color: str = "darkgreen",
+        metric_style: dict = None,
+        output_path: str = "assets/garmin_images/load_metric.png"
 ) -> str:
-
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     df["date"] = pd.to_datetime(df["date"])
@@ -386,9 +396,9 @@ def plot_training_load_with_metric(
 
     fig, ax1 = plt.subplots(figsize=(14, 8))
     ax1.bar(df.index, df["weeklyTrainingLoad"], color=bar_colors)
-    ax1.plot(df.index, df["loadMin"],linestyle="-", color="maroon", label="Load Min")
+    ax1.plot(df.index, df["loadMin"], linestyle="-", color="maroon", label="Load Min")
     ax1.plot(df.index, df["loadMax"], linestyle="-", color="lime", label="Load Max")
-    ax1.set_ylabel("Training Load",  color="skyblue")
+    ax1.set_ylabel("Training Load", color="skyblue")
     ax1.tick_params(axis="y", labelcolor="skyblue")
     ax2 = ax1.twinx()
     ax2.plot(df.index, df[metric], color=metric_color, label=metric_label, **metric_style)
@@ -411,7 +421,6 @@ def plot_training_load_with_metric(
     plt.show()
     plt.close(fig)
     return output_path
-
 
 
 if __name__ == '__main__':
