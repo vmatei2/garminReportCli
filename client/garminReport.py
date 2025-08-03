@@ -11,7 +11,15 @@ from utilities import constants as ct
 from datetime import datetime, timedelta
 from agents.baseAgent import UserProfile
 from agents.runningCoachAgent import AICoach
-from typing import List
+import argparse
+
+
+def prompt_if_interactive(prompt, default=None):
+    # only prompt if stdin is a tty
+    if sys.stdin.isatty():
+        return input(f"{prompt}{' [' + default + ']' if default else ''}: ").strip() or default
+    # non-interactive → just return default (or None)
+    return default
 
 
 def get_date_input(prompt: str, default: str, date_format: str = "%Y-%m-%d") -> datetime:
@@ -30,30 +38,54 @@ def get_date_input(prompt: str, default: str, date_format: str = "%Y-%m-%d") -> 
                 f"Encountered error: {e} while processing date input. Please ensure date is in the {date_format} format.")
 
 
-def run_report():
-    ## Ask user for input
-    default_username = os.getenv(ct.GARMINCONNECT_MAIL)
-    default_password = os.getenv(ct.GARMINCONNECT_PASSWORD)
-    default_sd = "2025-06-15"
-    default_ed = datetime.today().strftime("%Y-%m-%d")
-    garminUsername = input("Please enter your garmin username: ") or default_username
-    garminPassword = pwinput.pwinput("Please enter your garmin password: ")
-    if not garminPassword:
-        garminPassword = default_password
-    garminClient = GarminClient(username=garminUsername, password=garminPassword)
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument('--interactive', action='store_true', help='force interactive prompts')
+    p.add_argument('--username')
+    p.add_argument('--password')
+    p.add_argument('--start-date')
+    p.add_argument('--end-date')
+    p.add_argument('--to-email')
+    p.add_argument('--fetch')
+    p.add_argument('--run_from_terminal')
+    return p.parse_args()
+
+
+def run_report(fetch=True):
+    args = parse_args()
+    username = args.username or  prompt_if_interactive("Garmin username: ") or os.getenv('GARMINCONNECT_MAIL')
+    password = args.password or  (
+        pwinput.pwinput("Garmin password: ") if sys.stdin.isatty() else None) or os.getenv('GARMINCONNECT_PASSWORD')
+    if not username or not password:
+        raise RuntimeError(f"Missing Garming credentials: username={bool(username)}, password={bool(password)}")
+    # Dates
+    default_sd = datetime(2025, 1, 1)
+    default_ed = datetime.today()
+    sd = args.start_date or (get_date_input("Please enter start date for analysis: (Year-month-date)",
+                                            default=default_sd) if sys.stdin.isatty() else default_sd)
+    ed = args.end_date or (get_date_input("Please enter the end date for analysis: (Year-month-date)",
+                                          default=default_ed) if sys.stdin.isatty() else default_ed)
+    fetch = args.fetch or fetch
+    # Recipient
+    sendToMail = prompt_if_interactive("Send report to email: ") or os.getenv('REPORT_RECIPIENT')
+
+    garminClient = GarminClient(username=username, password=password)
 
     #  Mock user profile for now
-    userProfile = UserProfile(age=25, height=171, weight=67, sex='M', ambitions='Hyrox Open Podium and overall high fitness',
-                              current_job='Quantitative Developer for Investment Bank')
+    age =  prompt_if_interactive('User age: ') or os.getenv('USER_AGE')
+    height = prompt_if_interactive('User Height: ') or os.getenv('USER_HEIGHT')
+    weight =  prompt_if_interactive('User Weight: ') or os.getenv('USER_WEIGHT')
+    sex =prompt_if_interactive('User sex: ') or os.getenv('USER_SEX')
+    ambitions =  prompt_if_interactive('User ambitions: ') or os.getenv('USER_AMBITIONS')
+    current_job = prompt_if_interactive('User current job: ') or os.getenv('CURRENT_JOB')
+    userProfile = UserProfile(age=age, height=height, weight=weight, sex=sex, current_job=current_job,
+                              ambitions=ambitions)
 
     ## Get user garmin data
-    fetch = False
     garminClient.login(fetch=fetch)
-    startDate = get_date_input("Please enter start date for analysis: (Year-month-date): ", default=default_sd)
-    endDate = get_date_input("Please enter end date for analysis: (Year-month-end): ", default=default_ed)
-    vo2_series = garminClient.get_vo2max_and_training_status_series(startDate, endDate, fetch=fetch)
+    vo2_series = garminClient.get_vo2max_and_training_status_series(sd, ed, fetch=fetch)
     vo2_series = pd.DataFrame(vo2_series)
-    activities = garminClient.fetch_activities(startDate, endDate, fetch=fetch)
+    activities = garminClient.fetch_activities(sd, ed, fetch=fetch)
     activities = garminClient.process_activities(activities)
     activitiesDf = pd.DataFrame(activities)
     time_in_zones_fig = plot_average_time_in_zones(activities)
@@ -66,7 +98,8 @@ def run_report():
                                                       metric_color="crimson",
                                                       output_path="assets/garmin_images/rhr_vs_trainingload.png")
     weekly = get_weekly(vo2_series_df, activitiesDf)
-    zones_and_hr_trends = plot_zones_and_hr(weekly)
+    # only plot last 8 weeks
+    zones_and_hr_trends = plot_zones_and_hr(weekly.tail(8))
 
     ##  AI Coach
     aiCaoch = AICoach(model=ct.GROK3_MINI, temperature=0.7, max_tokens=5000)
@@ -84,8 +117,6 @@ def run_report():
     <p><strong>Confidence:</strong> {feedback.confidence:.1f}%</p>
     """
 
-    ##  Send Email
-    sendToMail = input("Please enter the email you want to receive the report to: ")
     if not sendToMail:
         garminClient.logger.info(f"No mail entered ... will now exit without sending the report.")
         sys.exit()
@@ -97,11 +128,11 @@ def run_report():
             + feedbackHtml
     )
 
-    mailSender.send_email(sendToMail, f"Garmin Report - {startDate} - {endDate}",
+    mailSender.send_email(sendToMail, f"Garmin Report - {sd} - {ed}",
                           "Below is your garmin report for the requested period.", htmlBody,
                           [time_in_zones_fig, activity_breakdown_fig, vo2_against_load, rhr_against_load,
                            zones_and_hr_trends])
 
 
 if __name__ == '__main__':
-    run_report()
+    run_report(fetch=True)

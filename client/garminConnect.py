@@ -273,8 +273,15 @@ def weekly_corr(weeklyDf):
 def plot_zones_and_hr(weekly_df, output_path="assets/garmin_images/zones_vs_hr.png"):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     zone_cols = _ct.ZONE_COLS
+    # Font size settings
+    title_fs   = 24
+    label_fs   = 18
+    tick_fs    = 14
+    legend_fs  = 14
+    annot_fs   = 12
+
     colors = plt.get_cmap("tab10").colors[:5]
-    fig, ax1 = plt.subplots(figsize=(20, 10))
+    fig, ax1 = plt.subplots(figsize=(16, 10))
     x = np.arange(len(weekly_df))
     width = 0.13
     # Plot side-by-side bars for zones
@@ -288,26 +295,26 @@ def plot_zones_and_hr(weekly_df, output_path="assets/garmin_images/zones_vs_hr.p
                 f"{height:.0f}",
                 ha="center",
                 va="bottom",
-                fontsize=8
+                fontsize=annot_fs
             )
-        ax1.set_ylabel("Time in Zones (mins)")
+        ax1.set_ylabel("Time in Zones (mins)", fontsize=label_fs)
     ax1.set_xticks(x + (width * len(zone_cols) / 2))
-    ax1.set_xticklabels([d.strftime("%b %d") for d in weekly_df.index])
-    ax1.tick_params(axis="y")
+    ax1.set_xticklabels([d.strftime("%b %d") for d in weekly_df.index], fontsize=tick_fs)
+    ax1.tick_params(axis="y", labelsize=tick_fs)
     ax1.grid(True, axis="y", linestyle="--", alpha=0.7)
     # HR lines (secondary axis)
     ax2 = ax1.twinx()
     ax2.plot(x + width * 2, weekly_df["average_hr"], color="red", marker="o", label="Avg HR")
     ax2.plot(x + width * 2, weekly_df["max_hr"], color="darkred", marker="x", linestyle="--", label="Max HR")
-    ax2.set_ylabel("Heart Rate (bpm)")
-    ax2.tick_params(axis="y", labelcolor="red")
+    ax2.set_ylabel("Heart Rate (bpm)", fontsize=label_fs)
+    ax2.tick_params(axis="y", labelcolor="red", labelsize=tick_fs)
 
     # Legend
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
     ax1.legend(h1 + h2, l1 + l2, loc="upper left", bbox_to_anchor=(1.02, 1), title="Legend")
 
-    ax1.set_title("Time in HR Zones vs Heart Rate (Weekly)")
+    ax1.set_title("Time in HR Zones vs Heart Rate (Weekly)", fontsize=title_fs, pad=20)
     fig.tight_layout()
     fig.savefig(output_path, bbox_inches="tight")
     plt.show()
@@ -353,29 +360,40 @@ def plot_average_time_in_zones(
     return output_path
 
 
-def plot_activity_breakdown(activities: List[GarminActivity],
-                            output_path: str = "assets/garmin_images/activity_breakdown.png"):
+def plot_activity_breakdown(activities, output_path="assets/garmin_images/activity_breakdown.png"):
     activity_types = [a.activity_type for a in activities]
     counts = Counter(activity_types)
     labels = list(counts.keys())
-    sizes = list(counts.values())
-    # ensure output directory exists
+    sizes  = list(counts.values())
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(8, 8))
     wedges, texts, autotexts = ax.pie(
         sizes,
-        labels=labels,
-        autopct='%1.1f%%',
+        labels=None,              # hide direct labels
+        autopct=lambda pct: f"{int(pct/100*sum(sizes))} ({pct:.1f}%)",
+        pctdistance=0.75,
         startangle=90,
-        colors=plt.cm.tab10.colors
+        wedgeprops=dict(width=0.4, edgecolor='w', linewidth=2),
+        shadow=True
     )
-
-    ax.set_title("Distribution of Garmin Activities")
-
-    # Save the figure before closing or showing
+    # Draw center circle for donut
+    centre_circle = plt.Circle((0, 0), 0.4, fc='white')
+    fig.gca().add_artist(centre_circle)
+    # Legend with labels
+    ax.legend(
+        wedges,
+        [f"{lbl}: {cnt}" for lbl, cnt in zip(labels, sizes)],
+        title="Activity Type",
+        loc="center left",
+        bbox_to_anchor=(1, 0, 0.5, 1),
+        fontsize=12,
+        title_fontsize=14
+    )
+    ax.set_title("Distribution of Garmin Activities", fontsize=18, pad=20)
+    ax.axis('equal')  # keep as circle
     fig.tight_layout()
     fig.savefig(output_path, bbox_inches='tight')
-    plt.close(fig)  # close to avoid duplicate plots if running in notebooks or scripts
+    plt.close(fig)
     return output_path
 
 
