@@ -4,6 +4,7 @@ import sys
 
 import pandas as pd
 import pwinput
+from client.mockGarminClient import  MockGarminClient
 from client.garminConnect import GarminClient, plot_average_time_in_zones, plot_activity_breakdown, \
     plot_training_load_with_metric, plot_zones_and_hr, get_weekly
 from utilities.emailSender import EmailSender
@@ -13,6 +14,7 @@ from agents.baseAgent import UserProfile
 from agents.runningCoachAgent import AICoach
 import argparse
 
+USE_MOCK = True
 
 def prompt_if_interactive(prompt, default=None):
     # only prompt if stdin is a tty
@@ -51,7 +53,7 @@ def parse_args():
     return p.parse_args()
 
 
-def run_report(fetch=True):
+def run_report(fetch=True, useMock=USE_MOCK):
     args = parse_args()
     username = args.username or  prompt_if_interactive("Garmin username: ") or os.getenv('GARMINCONNECT_MAIL')
     password = args.password or  (
@@ -69,7 +71,13 @@ def run_report(fetch=True):
     # Recipient
     sendToMail = prompt_if_interactive("Send report to email: ") or os.getenv('REPORT_RECIPIENT')
 
-    garminClient = GarminClient(username=username, password=password)
+    if useMock:
+
+        garminClient = MockGarminClient()
+        fetch = False  # ensure no network code paths are used!
+
+    else:
+        garminClient = GarminClient(username=username, password=password)
 
     #  Mock user profile for now
     age =  prompt_if_interactive('User age: ') or os.getenv('USER_AGE')
@@ -86,7 +94,7 @@ def run_report(fetch=True):
     vo2_series = garminClient.get_vo2max_and_training_status_series(sd, ed, fetch=fetch)
     vo2_series = pd.DataFrame(vo2_series)
     activities = garminClient.fetch_activities(sd, ed, fetch=fetch)
-    activities = garminClient.process_activities(activities)
+    activities = GarminClient.process_activities(activities)
     activitiesDf = pd.DataFrame(activities)
     time_in_zones_fig = plot_average_time_in_zones(activities)
     activity_breakdown_fig = plot_activity_breakdown(activities)

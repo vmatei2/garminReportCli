@@ -152,8 +152,8 @@ class GarminClient:
         except Exception as e:
             self.logger.error(f" Failed to fetch activities with error: {e}")
             raise
-
-    def process_activities(self, activities: List) -> List:
+    @staticmethod
+    def process_activities(activities: List) -> List:
         garminActivities = []
         for activity in activities:
             garminActivity = GarminActivity(

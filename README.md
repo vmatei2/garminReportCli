@@ -83,3 +83,22 @@ Simply use the defined .github/workflows.weekly-report.yml job (either ensuring 
 
  
 ```
+
+### Example Graph Output -- all with mock data generated through the MockGarminClient class! 
+
+- Time spent across each training zone in a week vs Max and Average Heart Rate across the weeks
+
+![img_5.png](img_5.png)
+
+- Vo2 Max against Training load -- allowing users to observe how their training is directly impacting Vo2 max calculations, while tracking training load (to ensure not over-training and risking injury)
+
+![img_2.png](img_2.png)
+
+- Resting HR against training load -- important metric to understand how our body is recovering. Spikes can indicate potential bad sleep / stressful period that would need to be managed by user.
+
+
+![img_4.png](img_4.png)
+
+- Example Report Screenshot with Coach Feedback and HTML Output summarising last 4 weeks of training 
+
+![img_1.png](img_1.png)
