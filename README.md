@@ -72,7 +72,7 @@ Use App password for the GMAIL password - not the actual password! https://suppo
 
 Want your Garmin report emailed weekly (e.g. every Sunday)?
 
-Simply use the defined .github/workflows.weekly-report.yml job (either ensuring all env variables are set as secrets or updating to pass in the arguments required via the Command Line!)
+Simply use the defined .github/workflows/weekly-report.yml job (either ensuring all env variables are set as secrets or updating to pass in the arguments required via the Command Line!)
 
 ### Example launch command
 
