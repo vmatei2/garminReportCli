@@ -1,24 +1,24 @@
-# 🏃 Garmin Fitness Report Generator
+# Garmin Fitness Report Generator
 
 > Analyze, visualize, and email weekly Garmin training reports with just one command.
 
-## 🔍 Overview
+## Overview
 
 This project connects to **Garmin Connect** via the unofficial Python API, fetches your activity and health data, and produces clear visual reports on your training patterns. You can track heart rate zones, training load, VO₂ max changes, and more — automatically emailed to you every week.
 
-## ✨ Features
+## Features
 
-- 📈 Weekly visual training summaries  
-- ❤️ Time spent in each heart rate zone  
-- 🏋️ Activity type breakdown (Running, Cycling, Conditioning, etc.)  
-- 🔁 Training Load vs Resting HR trends  
-- 🤖 (Optional) AI coach insights based on recent data (requires OpenAI API access)
-- 📧 Email reports via SMTP  
-- 🛠 CLI and automation ready  
+- Weekly visual training summaries  
+- Time spent in each heart rate zone  
+- Activity type breakdown (Running, Cycling, Conditioning, etc.)  
+- Training Load vs Resting HR trends  
+- (Optional) AI coach insights based on recent data (requires OpenAI API access)
+- Email reports via SMTP  
+- CLI and automation ready  
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ### 1. Clone the repo
 ```bash
@@ -55,7 +55,7 @@ CURRENT_JOB=
 
 Use App password for the GMAIL password - not the actual password! https://support.google.com/accounts/answer/185833
 
-### 🧠 How It Works
+### How It Works
 
 1. garminConnect.py: Logs in and fetches data
 
