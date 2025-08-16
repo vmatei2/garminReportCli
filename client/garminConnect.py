@@ -14,7 +14,7 @@ sns.set_style('whitegrid')
 from collections import Counter
 
 load_dotenv()
-from utilities.helpers import load_json_cache, build_cache_path, save_json_cache
+from utilities.helpers import load_json_cache, build_cache_path, save_json_cache, convert_seconds_to_time_string
 import pandas as pd
 import matplotlib.patches as mpatches
 import matplotlib.dates as mdates
@@ -245,6 +245,8 @@ def get_weekly(vo2df, activitiesDf):
         .size()
         .unstack(fill_value=0)
     )
+    #  convert to user-friendly string format from seconds (when getting the report a bit hard to actually see your volume if just looking at total seconds - 8hrs is a lot of seconds but so is 10hrs or 6hrs so quite hard to grasp the differences (maybe personal issue)
+    weekly['duration'] = weekly['duration'].apply(convert_seconds_to_time_string)
     # merge counts into weekly
     weekly = weekly.join(counts, how="left")
     # VO2 and resting HR

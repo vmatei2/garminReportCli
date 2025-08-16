@@ -14,7 +14,7 @@ from agents.baseAgent import UserProfile
 from agents.runningCoachAgent import AICoach
 import argparse
 
-USE_MOCK = True
+USE_MOCK = False
 
 def prompt_if_interactive(prompt, default=None):
     # only prompt if stdin is a tty
