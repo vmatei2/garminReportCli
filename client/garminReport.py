@@ -14,7 +14,7 @@ from agents.baseAgent import UserProfile
 from agents.runningCoachAgent import AICoach
 import argparse
 
-USE_MOCK = False
+
 
 def prompt_if_interactive(prompt, default=None):
     # only prompt if stdin is a tty
@@ -53,7 +53,7 @@ def parse_args():
     return p.parse_args()
 
 
-def run_report(fetch=True, useMock=USE_MOCK):
+def run_report(fetch=True, useMock: bool= True):
     args = parse_args()
     username = args.username or  prompt_if_interactive("Garmin username: ") or os.getenv('GARMINCONNECT_MAIL')
     password = args.password or  (
@@ -132,6 +132,7 @@ def run_report(fetch=True, useMock=USE_MOCK):
     htmlTable = weekly.tail(4).to_html(float_format="%.2f", border=0, justify="center", classes="dataframe")
     htmlBody = (
             "<h1>Your Garmin Report</h1>"
+            "<h3>Your last 4 weeks in numbers</h3>"
             + htmlTable
             + feedbackHtml
     )
@@ -143,4 +144,4 @@ def run_report(fetch=True, useMock=USE_MOCK):
 
 
 if __name__ == '__main__':
-    run_report(fetch=True)
+    run_report(fetch=True, useMock=False)
