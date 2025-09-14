@@ -1,7 +1,7 @@
 name: Garmin Weekly Report
 on:
   schedule:
-    # 19:00 UTC every Sunday → 20:00 BST in summer
+    # 19:00 UTC every Sunday
     - cron:  '0 19 * * SUN'
   workflow_dispatch:  # allow manual runs too
 
@@ -9,7 +9,7 @@ jobs:
   build-and-run:
     runs-on: ubuntu-latest
     env:
-      # these secrets you must add under your repo Settings → Secrets
+      # these secrets you must add under your repo Settings
       GMAIL_EMAIL:        ${{ secrets.GMAIL_EMAIL }}
       GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
       GARMINCONNECT_MAIL:   ${{ secrets.GARMINCONNECT_MAIL }}
@@ -40,10 +40,8 @@ jobs:
               uv pip install -e .
 
       - name: Run weekly report
-        # if your script auto-detects end-date = today and start-date = 4 weeks ago, just run it
         run: uv run -m client.garminReport --fetch TRUE
 
-      # optionally upload the email-rendered HTML as an artifact
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4

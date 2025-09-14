@@ -9,7 +9,7 @@ from typing import List
 from utilities import constants as _ct
 import numpy as np
 import seaborn as sns
-
+from datetime import datetime, date, timedelta
 sns.set_style('whitegrid')
 from collections import Counter
 
@@ -94,6 +94,7 @@ class GarminClient:
         status_series = []
         for dt in date_range:
             try:
+                dt = _to_datestr(dt)
                 self.logger.info(f"Extracting training status and RHR data for date: {dt}")
                 status_data = self.get_training_status(dt)
                 rhr_data = self.get_rhr_data(dt)
@@ -441,6 +442,19 @@ def plot_training_load_with_metric(
     plt.show()
     plt.close(fig)
     return output_path
+
+_DATE_FMT = "%Y-%m-%d"
+
+def _to_datestr(d) -> str:
+    """Function to convert input date to expected string format for Garmin Connect"""
+    if isinstance(d, datetime):
+        return d.strftime(_DATE_FMT)
+    if isinstance(d, date):
+        return d.strftime(_DATE_FMT)
+    if isinstance(d, str):
+        # optionally validate length/format here
+        return d
+    raise TypeError(f"Unsupported date type {type(d)}; expected datetime/date/str")
 
 
 if __name__ == '__main__':

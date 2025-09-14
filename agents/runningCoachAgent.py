@@ -48,7 +48,7 @@ class AICoach(LLMBase):
         Your Task:
         - Analyse the given data and asses how the user is progressing relative to their physical potential, previous training and overall ambitions.
         - Adjust for user profile (age, weight, height, sex, full-time job) to ensure training is relevant and sufficient. I.e. an investment banker will have less time than a personal trainer.
-        - Deliver clear, honest feedback, be it good or bad, from which the user can take something productive and guide their trainning going forward.
+        - Deliver clear, honest feedback, be it good or bad, from which the user can take something productive and guide their trainning going forward. Feedback with a clear focus on the most recent (minimum of 4 weeks) of training.
         - Give actionable advice for next week of training.
         
         Reasoning steps:
@@ -56,6 +56,8 @@ class AICoach(LLMBase):
         - Understand user profile and VO2 Max history
         - Assess overall training load in terms of time / distance covered
         - Consider risks
+        - Focus on the last 4 weeks of data when giving feedback relative to user's goals.
+        - Be aware of the athlete's training goals and history - but make sure there is a clear focus on the most recent perforamnce trends.
         - Deliver an honest piece of feedback.
         
         
